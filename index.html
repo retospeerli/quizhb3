@@ -2,27 +2,35 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>HB3 Lernapp (BAKOM)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HB3 Lernapp – BAKOM Vorschriften</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <main class="app">
+    <h1>HB3 Lernapp – Vorschriften</h1>
 
-<h1>HB3 Lernapp – Vorschriften</h1>
+    <section id="startScreen" class="card">
+      <p>Starte ein Training mit 20 zufällig ausgewählten Fragen.</p>
+      <button id="startBtn" class="primary-btn" type="button">Start</button>
+    </section>
 
-<div id="start">
-  <button onclick="startQuiz()">Start (20 Zufallsfragen)</button>
-</div>
+    <section id="quizScreen" class="card hidden">
+      <div id="progress" class="progress"></div>
+      <h2 id="questionId" class="question-id"></h2>
+      <div id="questionText" class="question-text"></div>
+      <div id="answers" class="answers"></div>
+      <div id="feedback" class="feedback"></div>
+    </section>
 
-<div id="quiz" class="hidden">
-  <div id="progress"></div>
-  <div id="question"></div>
-  <div id="answers"></div>
-</div>
+    <section id="resultScreen" class="card hidden">
+      <h2>Ergebnis</h2>
+      <p id="resultText"></p>
+      <button id="restartBtn" class="primary-btn" type="button">Nochmal</button>
+    </section>
+  </main>
 
-<div id="result" class="hidden"></div>
-
-<script src="data.js"></script>
-<script src="app.js"></script>
-
+  <script src="data.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
