@@ -1,66 +1,133 @@
 let quizQuestions = [];
-let current = 0;
+let currentIndex = 0;
 let score = 0;
+let locked = false;
+
+const startScreen = document.getElementById("startScreen");
+const quizScreen = document.getElementById("quizScreen");
+const resultScreen = document.getElementById("resultScreen");
+
+const startBtn = document.getElementById("startBtn");
+const restartBtn = document.getElementById("restartBtn");
+
+const progressEl = document.getElementById("progress");
+const questionIdEl = document.getElementById("questionId");
+const questionTextEl = document.getElementById("questionText");
+const answersEl = document.getElementById("answers");
+const feedbackEl = document.getElementById("feedback");
+const resultTextEl = document.getElementById("resultText");
+
+startBtn.addEventListener("click", startQuiz);
+restartBtn.addEventListener("click", startQuiz);
 
 function startQuiz() {
-  document.getElementById("start").classList.add("hidden");
-  document.getElementById("quiz").classList.remove("hidden");
+  if (!Array.isArray(questions) || questions.length === 0) {
+    alert("Keine Fragen gefunden. Prüfe data.js.");
+    return;
+  }
 
-  quizQuestions = shuffle(questions).slice(0, 20);
-  current = 0;
+  const validQuestions = questions.filter(q =>
+    q &&
+    typeof q.id === "string" &&
+    typeof q.question === "string" &&
+    q.answers &&
+    typeof q.answers === "object" &&
+    solutions[q.id]
+  );
+
+  if (validQuestions.length === 0) {
+    alert("Fragen oder Lösungen sind unvollständig.");
+    return;
+  }
+
+  quizQuestions = shuffle([...validQuestions]).slice(0, 20);
+  currentIndex = 0;
   score = 0;
+  locked = false;
+
+  startScreen.classList.add("hidden");
+  resultScreen.classList.add("hidden");
+  quizScreen.classList.remove("hidden");
 
   showQuestion();
 }
 
 function showQuestion() {
-  const q = quizQuestions[current];
+  locked = false;
+  feedbackEl.textContent = "";
+  answersEl.innerHTML = "";
 
-  document.getElementById("progress").innerText =
-    `Frage ${current + 1} / ${quizQuestions.length}`;
+  const q = quizQuestions[currentIndex];
+  progressEl.textContent = `Frage ${currentIndex + 1} von ${quizQuestions.length}`;
+  questionIdEl.textContent = q.id;
+  questionTextEl.textContent = q.question;
 
-  document.getElementById("question").innerText = q.question;
+  const optionKeys = ["a", "b", "c", "d"];
 
-  const answersDiv = document.getElementById("answers");
-  answersDiv.innerHTML = "";
+  optionKeys.forEach(key => {
+    if (!q.answers[key]) return;
 
-  for (let key in q.answers) {
     const btn = document.createElement("button");
-    btn.innerText = `${key.toUpperCase()}: ${q.answers[key]}`;
-    btn.onclick = () => checkAnswer(key, btn);
-    answersDiv.appendChild(btn);
-  }
+    btn.type = "button";
+    btn.className = "answer-btn";
+    btn.dataset.key = key;
+    btn.textContent = `${key.toUpperCase()}: ${q.answers[key]}`;
+
+    btn.addEventListener("click", () => handleAnswer(key));
+
+    answersEl.appendChild(btn);
+  });
 }
 
-function checkAnswer(selected, button) {
-  const correct = solutions[quizQuestions[current].id];
+function handleAnswer(selectedKey) {
+  if (locked) return;
+  locked = true;
 
-  if (selected === correct) {
-    button.classList.add("correct");
+  const q = quizQuestions[currentIndex];
+  const correctKey = solutions[q.id];
+  const buttons = answersEl.querySelectorAll(".answer-btn");
+
+  buttons.forEach(btn => {
+    btn.disabled = true;
+    const key = btn.dataset.key;
+
+    if (key === correctKey) {
+      btn.classList.add("correct");
+    }
+
+    if (key === selectedKey && key !== correctKey) {
+      btn.classList.add("wrong");
+    }
+  });
+
+  if (selectedKey === correctKey) {
     score++;
+    feedbackEl.textContent = "Richtig.";
   } else {
-    button.classList.add("wrong");
+    feedbackEl.textContent = `Falsch. Richtig ist ${correctKey.toUpperCase()}.`;
   }
 
-  setTimeout(() => {
-    current++;
-    if (current < quizQuestions.length) {
+  window.setTimeout(() => {
+    currentIndex++;
+
+    if (currentIndex < quizQuestions.length) {
       showQuestion();
     } else {
       showResult();
     }
-  }, 800);
+  }, 900);
 }
 
 function showResult() {
-  document.getElementById("quiz").classList.add("hidden");
-  const result = document.getElementById("result");
-  result.classList.remove("hidden");
-
-  result.innerHTML = `<h2>Ergebnis: ${score} / ${quizQuestions.length}</h2>
-    <button onclick="location.reload()">Nochmal</button>`;
+  quizScreen.classList.add("hidden");
+  resultScreen.classList.remove("hidden");
+  resultTextEl.textContent = `Du hast ${score} von ${quizQuestions.length} Fragen richtig beantwortet.`;
 }
 
 function shuffle(array) {
-  return array.sort(() => Math.random() - 0.5);
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
 }
