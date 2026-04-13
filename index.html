@@ -8,36 +8,33 @@
 </head>
 <body>
   <main class="app">
-    <header class="page-header">
-      <h1>HB3 Lernapp – Vorschriften</h1>
-      <p class="subtitle">Training und Prüfungsmodus für den BAKOM-Fragenkatalog</p>
-    </header>
+    <h1>HB3 Lernapp – Vorschriften</h1>
 
     <section id="startScreen" class="card">
-      <h2>Modus wählen</h2>
+      <p class="intro">Wähle einen Modus:</p>
 
-      <div class="mode-group">
-        <h3>Lernmodus</h3>
-        <p>Direkte Rückmeldung nach jeder Frage.</p>
+      <div class="menu-group">
+        <h2>Lernmodus</h2>
+        <p>Sofortige Rückmeldung nach jeder Frage.</p>
         <div class="menu-buttons">
-          <button type="button" class="primary-btn" data-mode="learn" data-count="20">20 Fragen</button>
-          <button type="button" class="primary-btn" data-mode="learn" data-count="40">40 Fragen</button>
-          <button type="button" class="primary-btn" data-mode="learn" data-count="60">60 Fragen</button>
+          <button id="learn20Btn" class="primary-btn" type="button">20 Fragen</button>
+          <button id="learn40Btn" class="primary-btn" type="button">40 Fragen</button>
+          <button id="learn60Btn" class="primary-btn" type="button">60 Fragen</button>
         </div>
       </div>
 
-      <div class="mode-group exam-box">
-        <h3>Prüfungsmodus</h3>
-        <p>60 Fragen. Keine Sofortkorrektur. Die Auswertung erscheint erst am Schluss.</p>
+      <div class="menu-group exam-group">
+        <h2>Prüfungsmodus</h2>
+        <p>60 Fragen, keine Sofortkorrektur. Die Auswertung erscheint erst am Schluss.</p>
         <div class="menu-buttons">
-          <button type="button" class="exam-btn" data-mode="exam" data-count="60">Prüfungsmodus starten</button>
+          <button id="exam60Btn" class="exam-btn" type="button">Prüfung starten</button>
         </div>
       </div>
     </section>
 
     <section id="quizScreen" class="card hidden">
-      <div class="top-row">
-        <div id="modeBadge" class="badge"></div>
+      <div class="topbar">
+        <div id="modeLabel" class="mode-label"></div>
         <div id="progress" class="progress"></div>
       </div>
 
@@ -45,16 +42,17 @@
       <div id="questionText" class="question-text"></div>
       <div id="answers" class="answers"></div>
       <div id="feedback" class="feedback"></div>
-      <button id="nextBtn" type="button" class="secondary-btn hidden">Nächste Frage</button>
+
+      <div class="bottom-actions">
+        <button id="nextBtn" class="secondary-btn hidden" type="button">Nächste Frage</button>
+      </div>
     </section>
 
     <section id="resultScreen" class="card hidden">
       <h2>Auswertung</h2>
-      <p id="resultSummary" class="result-summary"></p>
+      <p id="resultText" class="result-text"></p>
       <div id="resultDetails" class="result-details"></div>
-      <div class="result-actions">
-        <button id="restartBtn" type="button" class="primary-btn">Zurück zum Startmenü</button>
-      </div>
+      <button id="backToMenuBtn" class="primary-btn" type="button">Zurück zum Startmenü</button>
     </section>
   </main>
 
