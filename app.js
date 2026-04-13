@@ -92,18 +92,13 @@
       return;
     }
 
-    if (!window.solutions || typeof window.solutions !== "object") {
-      alert("Keine Lösungen gefunden. Prüfe data.js.");
-      return;
-    }
-
     const validQuestions = window.questions.filter((q) =>
       q &&
       typeof q.id === "string" &&
       typeof q.question === "string" &&
       q.answers &&
       typeof q.answers === "object" &&
-      ["a", "b", "c", "d"].includes(window.solutions[q.id])
+      ["a", "b", "c", "d"].includes(q.correct)
     );
 
     if (validQuestions.length < amount) {
@@ -147,8 +142,8 @@
       btn.className = "answer-btn";
       btn.dataset.key = key;
       btn.textContent = `${key.toUpperCase()}: ${q.answers[key]}`;
-
       btn.addEventListener("click", () => handleAnswer(key));
+
       answersEl.appendChild(btn);
     });
   }
@@ -158,7 +153,7 @@
     locked = true;
 
     const q = quizQuestions[currentIndex];
-    const correctKey = window.solutions[q.id];
+    const correctKey = q.correct;
     const buttons = answersEl.querySelectorAll(".answer-btn");
 
     answerLog.push({
