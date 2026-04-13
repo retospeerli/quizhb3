@@ -2,34 +2,23 @@ let quizQuestions = [];
 let currentIndex = 0;
 let score = 0;
 let locked = false;
-let currentMode = "learn";
-let results = [];
+let currentMode = "learn"; // "learn" | "exam"
+let answerLog = [];
 
 const startScreen = document.getElementById("startScreen");
 const quizScreen = document.getElementById("quizScreen");
 const resultScreen = document.getElementById("resultScreen");
 
-const modeBadge = document.getElementById("modeBadge");
+const modeLabelEl = document.getElementById("modeLabel");
 const progressEl = document.getElementById("progress");
 const questionIdEl = document.getElementById("questionId");
 const questionTextEl = document.getElementById("questionText");
 const answersEl = document.getElementById("answers");
 const feedbackEl = document.getElementById("feedback");
+const resultTextEl = document.getElementById("resultText");
+const resultDetailsEl = document.getElementById("resultDetails");
 const nextBtn = document.getElementById("nextBtn");
 
-const resultSummaryEl = document.getElementById("resultSummary");
-const resultDetailsEl = document.getElementById("resultDetails");
-const restartBtn = document.getElementById("restartBtn");
-
-document.querySelectorAll("[data-mode][data-count]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const mode = btn.dataset.mode;
-    const count = Number(btn.dataset.count);
-    startQuiz(mode, count);
-  });
-});
-
-restartBtn.addEventListener("click", returnToMenu);
 nextBtn.addEventListener("click", goToNextQuestion);
 
 function startQuiz(mode, amount) {
@@ -44,16 +33,11 @@ function startQuiz(mode, amount) {
     typeof q.question === "string" &&
     q.answers &&
     typeof q.answers === "object" &&
-    typeof solutions[q.id] === "string"
+    ["a", "b", "c", "d"].includes(solutions[q.id])
   );
 
-  if (validQuestions.length === 0) {
-    alert("Fragen oder Lösungen sind unvollständig.");
-    return;
-  }
-
-  if (amount > validQuestions.length) {
-    alert(`Es sind nur ${validQuestions.length} gültige Fragen vorhanden.`);
+  if (validQuestions.length < amount) {
+    alert(`Zu wenige gültige Fragen gefunden. Verfügbar: ${validQuestions.length}`);
     return;
   }
 
@@ -62,26 +46,23 @@ function startQuiz(mode, amount) {
   currentIndex = 0;
   score = 0;
   locked = false;
-  results = [];
+  answerLog = [];
 
   startScreen.classList.add("hidden");
   resultScreen.classList.add("hidden");
   quizScreen.classList.remove("hidden");
 
-  modeBadge.textContent = currentMode === "exam" ? "Prüfungsmodus" : "Lernmodus";
-
+  modeLabelEl.textContent = currentMode === "learn" ? "Lernmodus" : "Prüfungsmodus";
   showQuestion();
 }
 
 function showQuestion() {
   locked = false;
   feedbackEl.textContent = "";
-  feedbackEl.className = "feedback";
-  nextBtn.classList.add("hidden");
   answersEl.innerHTML = "";
+  nextBtn.classList.add("hidden");
 
   const q = quizQuestions[currentIndex];
-
   progressEl.textContent = `Frage ${currentIndex + 1} von ${quizQuestions.length}`;
   questionIdEl.textContent = q.id;
   questionTextEl.textContent = q.question;
@@ -108,56 +89,55 @@ function handleAnswer(selectedKey) {
 
   const q = quizQuestions[currentIndex];
   const correctKey = solutions[q.id];
-  const isCorrect = selectedKey === correctKey;
+  const buttons = answersEl.querySelectorAll(".answer-btn");
 
-  results.push({
+  answerLog.push({
     id: q.id,
     question: q.question,
     selected: selectedKey,
     correct: correctKey,
-    answers: q.answers,
-    isCorrect
+    isCorrect: selectedKey === correctKey
   });
 
-  if (isCorrect) {
+  if (selectedKey === correctKey) {
     score++;
   }
 
-  const buttons = answersEl.querySelectorAll(".answer-btn");
-  buttons.forEach(btn => {
-    btn.disabled = true;
-    const key = btn.dataset.key;
+  if (currentMode === "learn") {
+    buttons.forEach(btn => {
+      btn.disabled = true;
+      const key = btn.dataset.key;
 
-    if (currentMode === "learn") {
       if (key === correctKey) {
         btn.classList.add("correct");
       }
+
       if (key === selectedKey && key !== correctKey) {
         btn.classList.add("wrong");
       }
-    } else {
-      if (key === selectedKey) {
-        btn.classList.add("selected");
-      }
-    }
-  });
+    });
 
-  if (currentMode === "learn") {
-    if (isCorrect) {
+    if (selectedKey === correctKey) {
       feedbackEl.textContent = "Richtig.";
-      feedbackEl.classList.add("good");
     } else {
       feedbackEl.textContent = `Falsch. Richtig ist ${correctKey.toUpperCase()}.`;
-      feedbackEl.classList.add("bad");
     }
 
     window.setTimeout(() => {
       goToNextQuestion();
     }, 900);
-  } else {
-    feedbackEl.textContent = "Antwort gespeichert.";
-    nextBtn.classList.remove("hidden");
+    return;
   }
+
+  buttons.forEach(btn => {
+    btn.disabled = true;
+    if (btn.dataset.key === selectedKey) {
+      btn.classList.add("selected");
+    }
+  });
+
+  feedbackEl.textContent = "Antwort gespeichert.";
+  nextBtn.classList.remove("hidden");
 }
 
 function goToNextQuestion() {
@@ -178,58 +158,46 @@ function showResult() {
   const percent = Math.round((score / total) * 100);
 
   if (currentMode === "exam") {
-    resultSummaryEl.innerHTML =
-      `Prüfungsmodus abgeschlossen.<br>` +
-      `Richtig: <strong>${score} von ${total}</strong><br>` +
-      `Ergebnis: <strong>${percent}%</strong>`;
+    resultTextEl.textContent = `Prüfungsmodus: ${score} von ${total} richtig (${percent}%).`;
   } else {
-    resultSummaryEl.innerHTML =
-      `Lernmodus abgeschlossen.<br>` +
-      `Richtig: <strong>${score} von ${total}</strong><br>` +
-      `Trefferquote: <strong>${percent}%</strong>`;
+    resultTextEl.textContent = `Lernmodus: ${score} von ${total} richtig (${percent}%).`;
   }
 
-  renderResultDetails();
+  resultDetailsEl.innerHTML = buildResultDetails();
 }
 
-function renderResultDetails() {
-  resultDetailsEl.innerHTML = "";
+function buildResultDetails() {
+  if (!answerLog.length) {
+    return "<p>Keine Daten vorhanden.</p>";
+  }
 
-  results.forEach((item, index) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = `result-item ${item.isCorrect ? "correct" : "wrong"}`;
+  const items = answerLog.map(entry => {
+    const userLetter = entry.selected.toUpperCase();
+    const correctLetter = entry.correct.toUpperCase();
+    const cssClass = entry.isCorrect ? "correct" : "wrong";
 
-    const chosenText = item.answers[item.selected] || "Keine Antwort";
-    const correctText = item.answers[item.correct] || "";
-
-    wrapper.innerHTML = `
-      <h4>Frage ${index + 1}: ${item.id}</h4>
-      <p><strong>Frage:</strong> ${escapeHtml(item.question)}</p>
-      <p><strong>Deine Antwort:</strong> ${item.selected.toUpperCase()}: ${escapeHtml(chosenText)}</p>
-      <p><strong>Richtige Antwort:</strong> ${item.correct.toUpperCase()}: ${escapeHtml(correctText)}</p>
-      <p><strong>Status:</strong> ${item.isCorrect ? "richtig" : "falsch"}</p>
+    return `
+      <div class="result-item ${cssClass}">
+        <strong>${entry.id}</strong>
+        <div>${escapeHtml(entry.question)}</div>
+        <div>Deine Antwort: ${userLetter}</div>
+        <div>Richtige Antwort: ${correctLetter}</div>
+      </div>
     `;
-
-    resultDetailsEl.appendChild(wrapper);
   });
+
+  return `<div class="result-list">${items.join("")}</div>`;
 }
 
-function returnToMenu() {
-  resultScreen.classList.add("hidden");
+function goToStart() {
   quizScreen.classList.add("hidden");
+  resultScreen.classList.add("hidden");
   startScreen.classList.remove("hidden");
 
   answersEl.innerHTML = "";
   feedbackEl.textContent = "";
+  resultTextEl.textContent = "";
   resultDetailsEl.innerHTML = "";
-  resultSummaryEl.textContent = "";
-  nextBtn.classList.add("hidden");
-
-  quizQuestions = [];
-  results = [];
-  currentIndex = 0;
-  score = 0;
-  locked = false;
 }
 
 function shuffle(array) {
