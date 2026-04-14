@@ -1320,3 +1320,6 @@ const questions = [
     "correct": "b"
   }
 ];
+globalThis.HB3_QUESTIONS = questions;
+globalThis.questions = questions;
+console.log("data.js geladen:", questions.length, "Fragen");
