@@ -62,6 +62,15 @@
     exam60Btn.addEventListener("click", () => startQuiz("exam", 60));
     nextBtn.addEventListener("click", goToNextQuestion);
     backToMenuBtn.addEventListener("click", goToStart);
+
+    const loadedQuestions = getQuestions();
+    console.log("app.js sieht Fragen:", loadedQuestions.length);
+
+    if (loadedQuestions.length === 0) {
+      feedbackStartup(
+        "data.js wurde nicht geladen oder ist noch im Browser-Cache alt. Bitte Dateien prüfen und Seite hart neu laden."
+      );
+    }
   }
 
   function allElementsPresent() {
@@ -86,13 +95,33 @@
     );
   }
 
+  function getQuestions() {
+    if (Array.isArray(globalThis.HB3_QUESTIONS)) {
+      return globalThis.HB3_QUESTIONS;
+    }
+
+    if (Array.isArray(globalThis.questions)) {
+      return globalThis.questions;
+    }
+
+    try {
+      if (Array.isArray(questions)) {
+        return questions;
+      }
+    } catch (e) {}
+
+    return [];
+  }
+
   function startQuiz(mode, amount) {
-    if (!Array.isArray(window.questions) || window.questions.length === 0) {
-      alert("Keine Fragen gefunden. Prüfe data.js.");
+    const allQuestions = getQuestions();
+
+    if (!Array.isArray(allQuestions) || allQuestions.length === 0) {
+      alert("Keine Fragen gefunden. Prüfe data.js und lade die Seite mit Strg+F5 neu.");
       return;
     }
 
-    const validQuestions = window.questions.filter((q) =>
+    const validQuestions = allQuestions.filter((q) =>
       q &&
       typeof q.id === "string" &&
       typeof q.question === "string" &&
@@ -132,9 +161,7 @@
     questionIdEl.textContent = q.id;
     questionTextEl.textContent = q.question;
 
-    const optionKeys = ["a", "b", "c", "d"];
-
-    optionKeys.forEach((key) => {
+    ["a", "b", "c", "d"].forEach((key) => {
       if (!q.answers[key]) return;
 
       const btn = document.createElement("button");
@@ -143,7 +170,6 @@
       btn.dataset.key = key;
       btn.textContent = `${key.toUpperCase()}: ${q.answers[key]}`;
       btn.addEventListener("click", () => handleAnswer(key));
-
       answersEl.appendChild(btn);
     });
   }
@@ -182,16 +208,12 @@
         }
       });
 
-      if (selectedKey === correctKey) {
-        feedbackEl.textContent = "Richtig.";
-      } else {
-        feedbackEl.textContent = `Falsch. Richtig ist ${correctKey.toUpperCase()}.`;
-      }
+      feedbackEl.textContent =
+        selectedKey === correctKey
+          ? "Richtig."
+          : `Falsch. Richtig ist ${correctKey.toUpperCase()}.`;
 
-      window.setTimeout(() => {
-        goToNextQuestion();
-      }, 900);
-
+      setTimeout(goToNextQuestion, 900);
       return;
     }
 
@@ -223,11 +245,9 @@
     const total = quizQuestions.length;
     const percent = Math.round((score / total) * 100);
 
-    if (currentMode === "exam") {
-      resultTextEl.textContent = `Prüfungsmodus: ${score} von ${total} richtig (${percent}%).`;
-    } else {
-      resultTextEl.textContent = `Lernmodus: ${score} von ${total} richtig (${percent}%).`;
-    }
+    resultTextEl.textContent =
+      `${currentMode === "exam" ? "Prüfungsmodus" : "Lernmodus"}: ` +
+      `${score} von ${total} richtig (${percent}%).`;
 
     resultDetailsEl.innerHTML = buildResultDetails();
   }
@@ -281,5 +301,13 @@
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
+  }
+
+  function feedbackStartup(message) {
+    const note = document.createElement("p");
+    note.style.color = "#b91c1c";
+    note.style.fontWeight = "bold";
+    note.textContent = message;
+    startScreen.appendChild(note);
   }
 })();
